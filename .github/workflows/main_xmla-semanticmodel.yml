@@ -20,9 +20,11 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # Point directly to your .csproj file here:
       - name: dotnet publish
-        run: dotnet publish ./TabularModelDeployer.csproj -c Release -o ./myapp
+        run: |
+          PROJECT_PATH=$(find . -name "*.csproj" | head -n 1)
+          echo "Found project: $PROJECT_PATH"
+          dotnet publish "$PROJECT_PATH" -c Release -o ./myapp
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
