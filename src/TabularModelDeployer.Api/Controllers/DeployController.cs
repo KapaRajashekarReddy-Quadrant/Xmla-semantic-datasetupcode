@@ -1,28 +1,3 @@
-// using Microsoft.AspNetCore.Mvc;
-// using TabularModelDeployer.Api.Models;
-// using TabularModelDeployer.Api.Services;
-
-// namespace TabularModelDeployer.Api.Controllers;
-
-// [ApiController]
-// [Route("api/[controller]")]
-// public class DeployController : ControllerBase
-// {
-//     private readonly TabularDeploymentService _service;
-
-//     public DeployController(TabularDeploymentService service)
-//     {
-//         _service = service;
-//     }
-
-//     [HttpPost]
-//     public IActionResult Deploy([FromBody] DeploymentRequest request)
-//     {
-//         var result = _service.DeployModel(request);
-//         return Ok(result);
-//     }
-// }
-
 using Microsoft.AspNetCore.Mvc;
 using TabularModelDeployer.Api.Models;
 using TabularModelDeployer.Api.Services;
@@ -47,3 +22,5 @@ public class DeployController : ControllerBase
         return Ok(result);
     }
 }
+
+
