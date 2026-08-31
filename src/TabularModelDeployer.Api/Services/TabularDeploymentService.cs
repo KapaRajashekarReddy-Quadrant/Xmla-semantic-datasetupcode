@@ -260,7 +260,6 @@
 using Microsoft.AnalysisServices.Tabular;
 using TabularModelDeployer.Api.Models;
 using System.Linq;
-using System.Text.Json;
 
 namespace TabularModelDeployer.Api.Services;
 
@@ -501,7 +500,7 @@ in
 
     private void ApplyCustomDiagramLayout(Model model)
     {
-        // Filter out 'Measures1' or any table name starting with 'Measure'
+        // Filter out 'Measures1' or any measure table
         var schemaTables = model.Tables
             .Where(t => !string.Equals(t.Name, "Measures1", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -542,7 +541,8 @@ in
             }
         };
 
-        string serializedLayout = JsonSerializer.Serialize(layoutStructure);
+        // Fully qualify System.Text.Json.JsonSerializer to avoid collision with TOM JsonSerializer
+        string serializedLayout = System.Text.Json.JsonSerializer.Serialize(layoutStructure);
 
         if (model.Annotations.Contains("__PBI_DiagramLayout"))
         {
