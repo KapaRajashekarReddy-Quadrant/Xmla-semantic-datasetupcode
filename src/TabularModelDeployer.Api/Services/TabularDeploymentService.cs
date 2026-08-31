@@ -259,6 +259,7 @@
 
 using Microsoft.AnalysisServices.Tabular;
 using TabularModelDeployer.Api.Models;
+using System;
 using System.Linq;
 
 namespace TabularModelDeployer.Api.Services;
@@ -470,28 +471,24 @@ in
             }
         }
 
-        // ---------------- APPLY CUSTOM DIAGRAM LAYOUT ----------------
-        ApplyCustomDiagramLayout(model);
-
-        // 🔥 SAVE (with dummy columns if needed)
+        // 🔥 Save model structure first so table metadata is committed
         model.SaveChanges();
 
-        // 🔥 REMOVE DUMMY COLUMNS FROM MEASURE-ONLY TABLES
-        bool needsFinalSave = false;
+        // 🔥 Remove dummy columns from measure-only tables
         foreach (var table in model.Tables)
         {
             var dummy = table.Columns.Find("DummyColumn");
             if (dummy != null && table.Measures.Any())
             {
                 table.Columns.Remove(dummy);
-                needsFinalSave = true;
             }
         }
 
-        if (needsFinalSave)
-        {
-            model.SaveChanges();
-        }
+        // 🔥 Apply diagram layout AFTER table changes are settled
+        ApplyCustomDiagramLayout(model);
+
+        // 🔥 Final Save
+        model.SaveChanges();
 
         server.Disconnect();
 
@@ -500,7 +497,7 @@ in
 
     private void ApplyCustomDiagramLayout(Model model)
     {
-        // Filter out 'Measures1' or any measure table
+        // Exclude 'Measures1' or any table matching measure table names
         var schemaTables = model.Tables
             .Where(t => !string.Equals(t.Name, "Measures1", StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -509,8 +506,8 @@ in
         {
             location = new
             {
-                x = (index % 3) * 320 + 50,
-                y = (index / 3) * 260 + 50
+                x = (double)((index % 3) * 350 + 50),
+                y = (double)((index / 3) * 280 + 50)
             },
             node = new
             {
@@ -519,31 +516,35 @@ in
             },
             size = new
             {
-                height = 200,
-                width = 220
+                height = 200.0,
+                width = 230.0
             },
             zIndex = index + 1
         }).ToList();
 
+        // Standard Power BI Diagram Layout definition
         var layoutStructure = new
         {
             version = "1.1.0",
-            diagrams = new[]
+            diagrams = new object[]
             {
                 new
                 {
-                    name = "Model Layout",
                     ordinal = 0,
-                    scrollPosition = new { x = 0, y = 0 },
-                    zoomValue = 100,
+                    scrollPosition = new { x = 0.0, y = 0.0 },
+                    zoomValue = 100.0,
+                    pinKeyFieldsToTop = false,
+                    showExtraHeaderInfo = false,
+                    hideKeyFieldsWhenCollapsed = false,
+                    tables = schemaTables.Select(t => t.Name).ToList(),
                     nodes = nodes
                 }
             }
         };
 
-        // Fully qualify System.Text.Json.JsonSerializer to avoid collision with TOM JsonSerializer
         string serializedLayout = System.Text.Json.JsonSerializer.Serialize(layoutStructure);
 
+        // Set Model Annotation
         if (model.Annotations.Contains("__PBI_DiagramLayout"))
         {
             model.Annotations["__PBI_DiagramLayout"].Value = serializedLayout;
